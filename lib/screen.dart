@@ -1,123 +1,99 @@
-import 'package:car_milage/car.dart';
+import 'package:car_milage/application/screen/bloc/screen_bloc.dart';
+import 'package:car_milage/trip.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class Screen extends StatefulWidget {
+class Screen extends StatelessWidget {
   @override
-  _ScreenState createState() => _ScreenState();
+  Widget build(BuildContext context) {
+    return BlocConsumer<ScreenBloc, ScreenState>(
+      listener: (context, state) {},
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Car mileage program'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AddTripForm(),
+                Expanded(
+                  child: TripsListView(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
-class _ScreenState extends State<Screen> {
-  Car car = Car();
-  TextEditingController milesTextController = TextEditingController();
-  TextEditingController petrolTextController = TextEditingController();
-  double sum = 0;
-  double average = 0;
-  double mileage = 0;
-  var mileageRecord = [];
+class AddTripForm extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('Enter new trip data below'),
+        TextFormField(
+          decoration: InputDecoration(hintText: 'Enter miles'),
+          onChanged: (val) {
+            context.read<ScreenBloc>().add(
+                  MilesChangedEvent(val),
+                );
+          },
+        ),
+        TextFormField(
+          decoration: InputDecoration(hintText: 'Enter fuel consumed'),
+          onChanged: (val) {
+            context.read<ScreenBloc>().add(
+                  FuelConsumedChangedEvent(val),
+                );
+          },
+        ),
+        MaterialButton(
+          child: Text('Add Trip'),
+          color: Colors.blue,
+          onPressed: () {
+            context.read<ScreenBloc>().add(AddTripPressedEvent());
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class TripsListView extends StatelessWidget {
+  const TripsListView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('appbar'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: Column(
+    return BlocBuilder<ScreenBloc, ScreenState>(
+      builder: (context, state) {
+        return Column(
           children: [
-            TextField(
-              controller: milesTextController,
-              decoration: InputDecoration(hintText: 'miles driven'),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            TextField(
-              controller: petrolTextController,
-              decoration: InputDecoration(hintText: 'petrol in liter'),
-            ),
-            // TextField(
-            //   controller: tripsTextController,
-            // ),
-            SizedBox(
-              height: 30,
-            ),
-            InkWell(
-              onTap: () {
-                mileage = car.calculateMilage(
-                    double.parse(milesTextController.text),
-                    double.parse(petrolTextController.text));
-                mileageRecord.add(mileage);
-
-                setState(() {});
-              },
-              child: Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                ),
-                child: Text(
-                  'Calculate  instant milage',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            Container(
-                padding: EdgeInsets.all(20),
-                decoration:
-                    BoxDecoration(border: Border.all(color: Colors.black)),
-                child: Text(
-                  mileage.toStringAsPrecision(5),
-                  style: TextStyle(fontSize: 20),
-                )),
-            Text('total trips   ' + mileageRecord.toString()),
-
-            SizedBox(
-              height: 40,
-            ),
-
-            InkWell(
-              onTap: () {
-                _averageMileageRecord();
-                setState(() {});
-              },
-              child: Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                ),
-                child: Text(
-                  'Calculate average milage of all trips',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            Container(
-                padding: EdgeInsets.all(20),
-                decoration:
-                    BoxDecoration(border: Border.all(color: Colors.black)),
-                child: Text(
-                  average.toStringAsPrecision(5),
-                  style: TextStyle(fontSize: 20),
-                )),
+            Text('All Trips'),
+            Expanded(
+              child: ListView.builder(
+                  itemCount: state.allTrips.length,
+                  itemBuilder: (_, index) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('miles: ${state.allTrips[index].miles}'),
+                        Text(
+                            'fuel consumed: ${state.allTrips[index].fuelConsumedInLitres}'),
+                        Text(
+                            'mileage: ${state.allTrips[index].calculateMilage()}')
+                      ],
+                    );
+                  }),
+            )
           ],
-        ),
-      ),
+        );
+      },
     );
-  }
-
-  double _averageMileageRecord() {
-    sum = mileageRecord.reduce((value, element) => value + element);
-    average = sum / mileageRecord.length;
-
-    return average;
   }
 }
